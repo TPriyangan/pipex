@@ -37,7 +37,7 @@ char	*ft_strjoin(char const *s1, char const *s2)
 		return (NULL);
 	i = ft_strlen(s1);
 	j = ft_strlen(s2);
-	ptr = (char *)malloc((i + j + 1) * sizeof(char const));
+	ptr = (char *)malloc((i + j + 1) * sizeof(char));
 	if (!ptr)
 		return (NULL);
 	while (k < i)
@@ -174,7 +174,7 @@ char	*find_path(char *cmd, char **envp)
 	char	*part_path;
 
 	i = 0;
-	while (ft_strnstr(envp[i], "PATH", 4) == 0)
+	while (ft_strnstr(envp[i], "PATH", 4) == NULL)
 		i++;
 	paths = ft_split(envp[i] + 5, ':');
 	i = 0;
@@ -192,7 +192,7 @@ char	*find_path(char *cmd, char **envp)
 	while (paths[++i])
 		free(paths[i]);
 	free(paths);
-	return (0);
+	return (NULL);
 }
 
 void	command(char *argv, char **envp)
