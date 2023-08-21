@@ -195,31 +195,36 @@ char	*find_path(char *cmd, char **envp)
 	return (NULL);
 }
 
-void	command(char *argv, char **envp)
-{
-	char	**cmd;
-	int 	i;
-	char	*path;
-	
-	i = -1;
-	cmd = ft_split(argv, ' ');
-	path = find_path(cmd[0], envp);
-	if (!path)	
-	{
-		while (cmd[++i])
-			free(cmd[i]);
-		free(cmd);
-		error();
-	}
-	if (execve(path, cmd, envp) == -1)
-		error();
+void command(char *argv, char **envp) {
+    char **cmd;
+    int i;
+    char *path;
+
+    cmd = ft_split(argv, ' ');
+    if (cmd == NULL) {
+        perror("ft_split failed");
+        exit(EXIT_FAILURE);
+    }
+
+    path = find_path(cmd[0], envp);
+    if (path == NULL) {
+        perror("Command not found");
+        free(cmd); // Free memory allocated by ft_split
+        exit(EXIT_FAILURE);
+    }
+
+    // Execute the command
+    if (execve(path, cmd, envp) == -1) {
+        perror("execve failed");
+        free(cmd); // Free memory allocated by ft_split
+        exit(EXIT_FAILURE);
+    }
 }
 
 
 int	main(int argc, char *argv[], char *envp[])
 {
 	int			cmd2pipefd[2];
-	char		*buffer;
 	pid_t		childpid;
 	ssize_t		read_bytes;
 	
@@ -277,7 +282,7 @@ int	main(int argc, char *argv[], char *envp[])
 		dup2(pipe_fd[1], STDOUT_FILENO);
 		close(pipe_fd[0]);
 		close(pipe_fd[1]);
-		command(cmd[1], envp);
+		command(cmd1, envp);
 	}
 
 	pid2 = fork();
@@ -292,7 +297,7 @@ int	main(int argc, char *argv[], char *envp[])
 		dup2(pipe_fd[0], STDIN_FILENO);
 		dup2(outfile_fd, STDOUT_FILENO);
 		close(pipe_fd[0]);
-		command(cmd[2],envp);
+		command(cmd2,envp);
 	}
 	/**/
 	close(pipe_fd[0]);
