@@ -1,24 +1,27 @@
-void  openfiles(char *infile, char *outfile)
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+void  openfiles(char *infile, char *outfile, int *infile_fd, int *outfile_fd)
 {
-  int	infile_fd;
-  int outfile_fd;
-
-	infile_fd = open(infile, O_RDONLY);
-	if (infile_fd == -1)
+	int file_permissions;
+	file_permissions = 0777;
+	*infile_fd = open(infile, O_RDONLY);
+	if (*infile_fd == -1)
 	{
 		perror("open infile_fd failure");
 		exit(EXIT_FAILURE);
 	}
-	outfile_fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (outfile_fd == -1)
+	*outfile_fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, file_permissions);
+	if (*outfile_fd == -1)
 	{
 		perror("open outfile_fd failure");
 		exit(EXIT_FAILURE);
 	}
-  return(0);
 }
 
-void childprocess1(char *argv[], char *envp[], int pipe_fd[], int infile_fd,)
+void childprocess1(char *argv[], char *envp[], int pipe_fd[], int infile_fd)
 {
   pid_t	pid1;
 
@@ -35,6 +38,7 @@ void childprocess1(char *argv[], char *envp[], int pipe_fd[], int infile_fd,)
 		close(pipe_fd[0]);
 		close(pipe_fd[1]);
 		command(argv[2], envp);
+		exit(EXIT_SUCCESS);
 	}
 }
 void childprocess2(char *argv[], char *envp[], int pipe_fd[], int outfile_fd)
@@ -54,6 +58,7 @@ void childprocess2(char *argv[], char *envp[], int pipe_fd[], int outfile_fd)
 		dup2(outfile_fd, STDOUT_FILENO);
 		close(pipe_fd[0]);
 		command(argv[3],envp);
+		exit(EXIT_SUCCESS);
 	}
 }
 void closefunction(int pipe_fd[], int infile_fd, int outfile_fd, int pid1, int pid2)
@@ -71,11 +76,13 @@ void closefunction(int pipe_fd[], int infile_fd, int outfile_fd, int pid1, int p
 }
 int	main(int argc, char *argv[], char *envp[])
 {
-	int			cmd2pipefd[2];
-	pid_t		childpid;
-	ssize_t		read_bytes;
-	
+	int	infile_fd;
+	int outfile_fd;
+	int	pipe_fd[2];
 	/*check argument count*/
+
+	infile_fd = -1;
+	outfile_fd = -1;
 	if (argc != 5)
 	{
 		perror("argc !=5");
@@ -84,7 +91,6 @@ int	main(int argc, char *argv[], char *envp[])
 	/*Opening input and output files*/
   openfiles(argv[1], argv[4]);
 	/*CREATING A PIPE*/
-	int	pipe_fd[2];
 	if (pipe(pipe_fd) == -1)
 	{
 		perror("pipe creation failure");
@@ -94,5 +100,5 @@ int	main(int argc, char *argv[], char *envp[])
 	childprocess1(argv, envp, pipe_fd, infile_fd);
   childprocess2(argv, envp, pipe_fd, outfile_fd);
 	/**/
-	closefunction(pipefd, infile_fd, outfile_fd, pid1, pid2);
+	closefunction(pipe_fd, infile_fd, outfile_fd, pid1, pid2);
 }
